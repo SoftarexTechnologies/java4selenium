@@ -1,0 +1,45 @@
+group 'selenium_test'
+version 'v1.0'
+
+apply plugin: 'java'
+
+task(runTests, type: JavaExec) {
+    main = 'run.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if( project.hasProperty("_help") ){
+        args "HELP_ARG"
+    }else {
+        if (project.hasProperty("_browser")) {
+            args browser
+        } else {
+            args "DEFAULT_BROWSER_ARG"
+        }
+        if (project.hasProperty("_all")) {
+            args "ALL_ARG"
+        } else {
+            args "CUSTOM_ARG"
+            if (project.hasProperty("_groups")) {
+                args "START_GROUPS_ARG"
+                args Eval.me(groups)
+            }
+            if (project.hasProperty("_tests")) {
+                args "START_TESTS_ARG"
+                args Eval.me(tests)
+            }
+        }
+    }
+
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+
+    compile 'org.seleniumhq.selenium:selenium-java:2.48.2'
+    compile 'org.seleniumhq.selenium:selenium-chrome-driver:2.48.2'
+    compile 'org.reflections:reflections:0.9.10'
+    compile 'org.slf4j:slf4j-log4j12:1.7.13'
+}
