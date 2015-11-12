@@ -6,10 +6,10 @@ This is console applications.
 
 ## Usage
 
->> gradle runTests [-Pbrowser] -Pall
-			<to run all tests>
+gradle runTests [-Pbrowser] -Pall
+		<to run all tests>
 	or  gradle runTests [-Pbrowser] [-options]
-			<to run custom selected tests>
+		<to run custom selected tests>
 
 where options include:
     -Pbrowser=<value>           set browser to test - 'FIREFOX' is default. ('FIREFOX','CHROME','OPERA','SAFARI','IE')
