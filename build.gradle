@@ -38,6 +38,17 @@ task(runTests, type: JavaExec) {
 
 }
 
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Jar File',
+                'Implementation-Version': version,
+                'Main-Class': 'run.Main'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 repositories {
     mavenCentral()
 }
