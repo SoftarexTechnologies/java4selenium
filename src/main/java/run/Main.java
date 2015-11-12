@@ -16,7 +16,9 @@ import tests.base.AbstractTest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -31,6 +33,8 @@ public class Main {
     private static final String HELP = "HELP_ARG";
 
     private static final String DEFAULT_BROWSER = "DEFAULT_BROWSER_ARG";
+    private static final String TEST_LIST_ARG = "TEST_LIST_ARG";
+    private static final String STOP_ON_ERROR_ARG = "STOP_ON_ERROR_ARG";
     private static final String ALL_TESTS = "ALL_ARG";
     private static final String CUSTOM_TESTS = "CUSTOM_ARG";
     private static final String START_GROUPS = "START_GROUPS_ARG";
@@ -38,12 +42,12 @@ public class Main {
 
     public static void main(String[] args) {
 
-        System.out.println(args[0]);
-
         if (args.length < 2) {
-            if(args.length == 1 && args[0].trim().equals(HELP)){
+            if (args[0].trim().equals(HELP)) {
                 printHelp();
-            }else {
+            } else if (args[0].trim().equals(TEST_LIST_ARG)) {
+                printTestList();
+            } else {
                 System.out.println("At least one argument expected!!!");
             }
             return;
@@ -79,6 +83,7 @@ public class Main {
 
         final List<String> selectedTestGroups = new ArrayList<>();
         final List<String> selectedTests = new ArrayList<>();
+        int argumentIndex = 2;
         //Check tests as second argument
         if (args[1].trim().equals(CUSTOM_TESTS)) {
             //if custom tests selected, check what arguments exist
@@ -87,47 +92,47 @@ public class Main {
                 return;
             }
             //if tests set as groups
-            int index = 2;
-            if (args[index].trim().equals(START_GROUPS)) {
+
+            if (args[argumentIndex].trim().equals(START_GROUPS)) {
 
                 if (args.length < 4) {
                     System.out.println("At least one test group expected!!!");
                     return;
                 }
-                index = 3;
+                argumentIndex = 3;
                 //fill list of test groups
-                while (args.length > index && !args[index].trim().equals(START_TESTS)) {
-                    selectedTestGroups.add(args[index]);
-                    index++;
+                while (args.length > argumentIndex && !args[argumentIndex].trim().equals(START_TESTS)) {
+                    selectedTestGroups.add(args[argumentIndex]);
+                    argumentIndex++;
                 }
             }
             //if tests set as testName
-            if (args.length > index && args[index].trim().equals(START_TESTS)) {
+            if (args.length > argumentIndex && args[argumentIndex].trim().equals(START_TESTS)) {
                 //if tests are not specified
-                boolean testsExistInArgs = args.length < index + 2;
+                boolean testsExistInArgs = args.length < argumentIndex + 2;
                 if (testsExistInArgs && selectedTestGroups.isEmpty()) {
                     System.out.println("At least one test group expected!!!");
                     return;
                 }
                 if (!testsExistInArgs) {
-                    index++;
+                    argumentIndex++;
                     //fill list of custom tests
-                    while (args.length > index) {
-                        selectedTests.add(args[index]);
-                        index++;
+                    while (args.length > argumentIndex && !args[argumentIndex].trim().equals(STOP_ON_ERROR_ARG)) {
+                        selectedTests.add(args[argumentIndex]);
+                        argumentIndex++;
                     }
                 }
             }
-        }else if(!args[1].trim().equals(ALL_TESTS)){
+        } else if (!args[1].trim().equals(ALL_TESTS)) {
             System.out.println("List of parameters is incorrect!!!");
             return;
         }
+        //stop on error exist
+        System.out.println();
+        System.out.println(args[argumentIndex].trim());
+        boolean stopOnError = args.length > argumentIndex && args[argumentIndex].trim().equals(STOP_ON_ERROR_ARG);
 
-        Reflections reflections = new Reflections(TEST_PACKAGE);
-        final List<Class<? extends AbstractTest>> foundedTests = reflections.getSubTypesOf(AbstractTest.class)
-                .stream().filter(item -> item.isAnnotationPresent(SeleniumTestGroup.class) && item.isAnnotationPresent(SeleniumTest.class))
-                .collect(Collectors.toList());
-
+        final List<Class<? extends AbstractTest>> foundedTests = getAllTests();
         int failedTestCount = 0;
         int runTestCount = 0;
         try {
@@ -135,37 +140,70 @@ public class Main {
                 boolean testAllowed = true;
                 if (!selectedTestGroups.isEmpty()) {
                     testAllowed = selectedTestGroups.stream().filter(group ->
-                                    group.equals(((SeleniumTestGroup) test.getAnnotation(SeleniumTestGroup.class)).name())
+                                    group.equals(test.getAnnotation(SeleniumTestGroup.class).name())
                     ).findFirst().isPresent();
                 }
-                if(!selectedTests.isEmpty()){
+                if (!selectedTests.isEmpty()) {
                     boolean testAllowedByName = selectedTests.stream().filter(testItem ->
-                                    testItem.equals(((SeleniumTest) test.getAnnotation(SeleniumTest.class)).name())
+                                    testItem.equals(test.getAnnotation(SeleniumTest.class).name())
                     ).findFirst().isPresent();
 
                     testAllowed = selectedTestGroups.isEmpty() ? testAllowedByName : testAllowed || testAllowedByName;
                 }
-                if(testAllowed) {
+                if (testAllowed) {
                     runTestCount++;
                     if (test.newInstance().run(driver)) {
                         failedTestCount++;
+                        if (stopOnError) {
+                            System.out.println();
+                            System.out.println("Failed on test " + test.getSimpleName());
+                            break;
+                        }
                     }
                 }
             }
         } catch (InstantiationException | IllegalAccessException e) {
             logger.error(e.getMessage(), e);
         } finally {
-            System.out.println(" ====== Result ======");
+            System.out.println();
+            System.out.println(" ====== ====== ====== Result ====== ====== ======");
             System.out.println("Was executed " + runTestCount + " tests");
             System.out.println("Successfully: " + (runTestCount - failedTestCount));
             System.out.println("Failed: " + failedTestCount);
-            System.out.println(" ====== End ======");
+            System.out.println(" ====== ====== ======  End   ====== ====== ======");
         }
 
 
     }
 
-    public static void printHelp(){
+    private static List<Class<? extends AbstractTest>> getAllTests() {
+        Reflections reflections = new Reflections(TEST_PACKAGE);
+        return reflections.getSubTypesOf(AbstractTest.class)
+                .stream().filter(item -> item.isAnnotationPresent(SeleniumTestGroup.class) && item.isAnnotationPresent(SeleniumTest.class))
+                .collect(Collectors.toList());
+    }
+
+    public static void printTestList() {
+        final List<Class<? extends AbstractTest>> foundedTests = getAllTests();
+        Map<String, List<String>> testsByGroups = new HashMap<>();
+        foundedTests.forEach(item -> {
+            if (!testsByGroups.containsKey(item.getAnnotation(SeleniumTestGroup.class).name())) {
+                testsByGroups.put(item.getAnnotation(SeleniumTestGroup.class).name(), new ArrayList<>());
+            }
+            testsByGroups.get(item.getAnnotation(SeleniumTestGroup.class).name()).add(item.getAnnotation(SeleniumTest.class).name());
+        });
+        System.out.println("====== ====== ====== Tests ====== ====== ======");
+        System.out.println("Total : " + foundedTests.size());
+        System.out.println();
+        testsByGroups.forEach((key, value) -> {
+            System.out.println(key + " (" + value.size() + "):");
+            value.forEach(item ->
+                            System.out.println("\t" + item)
+            );
+        });
+    }
+
+    public static void printHelp() {
         System.out.println("====== ====== ====== Help tutorial ====== ===== ======");
         System.out.println();
         System.out.println("Usage: gradle runTests [-P_browser] -P_all");
@@ -178,6 +216,8 @@ public class Main {
         System.out.println("    -P_all\t\t\tselect all existing tests to execute.");
         System.out.println("    -P_groups=<\"[args...]\">\tspecifies list of groups of tests to execute.");
         System.out.println("    -P_tests=<\"[args...]\">\tspecifies list of tests to execute");
+        System.out.println("    -P_tests\t\t\tprint list of existing tests");
+        System.out.println("    -P_stop_on_error\t\tif specified, tests will be stopper after first error");
         System.out.println("    -P_help\t\t\tprint this help message");
         System.out.println();
         System.out.println("====== ====== ====== ====== ====== ====== ===== ======");

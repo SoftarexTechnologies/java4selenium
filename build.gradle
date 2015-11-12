@@ -6,25 +6,32 @@ apply plugin: 'java'
 task(runTests, type: JavaExec) {
     main = 'run.Main'
     classpath = sourceSets.main.runtimeClasspath
-    if( project.hasProperty("_help") ){
+    if (project.hasProperty("_help")) {
         args "HELP_ARG"
-    }else {
-        if (project.hasProperty("_browser")) {
-            args browser
+    } else {
+        if (project.hasProperty("_tests")) {
+            args "TEST_LIST_ARG"
         } else {
-            args "DEFAULT_BROWSER_ARG"
-        }
-        if (project.hasProperty("_all")) {
-            args "ALL_ARG"
-        } else {
-            args "CUSTOM_ARG"
-            if (project.hasProperty("_groups")) {
-                args "START_GROUPS_ARG"
-                args Eval.me(groups)
+            if (project.hasProperty("_browser")) {
+                args browser
+            } else {
+                args "DEFAULT_BROWSER_ARG"
             }
-            if (project.hasProperty("_tests")) {
-                args "START_TESTS_ARG"
-                args Eval.me(tests)
+            if (project.hasProperty("_all")) {
+                args "ALL_ARG"
+            } else {
+                args "CUSTOM_ARG"
+                if (project.hasProperty("_groups")) {
+                    args "START_GROUPS_ARG"
+                    args Eval.me(groups)
+                }
+                if (project.hasProperty("_tests")) {
+                    args "START_TESTS_ARG"
+                    args Eval.me(tests)
+                }
+            }
+            if (project.hasProperty("_stop_on_error")) {
+                args "STOP_ON_ERROR_ARG"
             }
         }
     }

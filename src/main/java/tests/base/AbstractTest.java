@@ -18,11 +18,17 @@ public abstract class AbstractTest {
 
     protected String baseUrl;
 
+    /**
+     * @return true, if test failed
+     */
     public boolean run(WebDriver driver) {
         this.driver = driver;
         return run();
     }
 
+    /**
+    * @return true, if test failed
+    */
     public boolean run() {
         boolean testFailed = false;
         setUp();
