@@ -12,11 +12,11 @@ gradle runTests [-Pbrowser] -Pall
 		<to run custom selected tests>
 
 where options include:
-    -Pbrowser=<value>           set browser to test - 'FIREFOX' is default. ('FIREFOX','CHROME','OPERA','SAFARI','IE')
-    -Pall                       select all existing tests to execute.
-    -Pgroups=<"[args...]">      specifies list of groups of tests to execute.
-    -Ptests=<"[args...]">       specifies list of tests to execute
-    -P?help                     print this help message
+*    -Pbrowser=<value>           set browser to test - 'FIREFOX' is default. ('FIREFOX','CHROME','OPERA','SAFARI','IE')
+*    -Pall                       select all existing tests to execute.
+*    -Pgroups=<"[args...]">      specifies list of groups of tests to execute.
+*    -Ptests=<"[args...]">       specifies list of tests to execute
+*    -P?help                     print this help message
 
 ## Example
 
