@@ -22,7 +22,7 @@ where options include:
 
 ### build fat jar
 
-gradle fatJar
+> gradle fatJar
 
 ### run with jar
 
@@ -40,33 +40,31 @@ where oprions include:
 
 ## Example
 
-Open console window at project root.
-
 ### call help
-#### for gradle
+for gradle:
 > gradle runTests -P_all
 
-#### for jar
+for jar:
 > *.jar -help
 
 ### run all tests
-#### for gradle
+for gradle:
 > gradle runTests -P_all
 
-#### for jar
+for jar:
 > *.jar -all
 
 ### run custom groups of tests on custom browser
-#### for gradle
+for gradle:
 > gradle runTests -P_browser="OPERA" -P_groups="['GoogleGroup','JiraGroup']"
 
-#### for jar
+for jar:
 > *.jar -browser="OPERA" -groups GoogleGroup JiraGroup
 
 ### run custom group of tests and list of tests
-#### for gradle
+for gradle:
 > gradle runTests -P_groups="['GoogleGroup']" -P_tests="['JiraLoginTest','JiraLoguotTest2']"
 
-#### for jar
+for jar:
 > *.jar -groups GoogleGroup -tests JiraLoginTest JiraLoguotTest2
 
