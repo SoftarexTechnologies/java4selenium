@@ -3,6 +3,12 @@ package run;
 import common.enums.Browsers;
 import common.enums.markers.SeleniumTest;
 import common.enums.markers.SeleniumTestGroup;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -21,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static run.RunConstants.*;
 /**
  * Created by Ugene Reshetnyak on 12.11.2015.
  */
@@ -30,33 +37,38 @@ public class Main {
 
     private static final String TEST_PACKAGE = "tests";
 
-    private static final String HELP = "HELP_ARG";
-
-    private static final String DEFAULT_BROWSER = "DEFAULT_BROWSER_ARG";
-    private static final String TEST_LIST_ARG = "TEST_LIST_ARG";
-    private static final String STOP_ON_ERROR_ARG = "STOP_ON_ERROR_ARG";
-    private static final String ALL_TESTS = "ALL_ARG";
-    private static final String CUSTOM_TESTS = "CUSTOM_ARG";
-    private static final String START_GROUPS = "START_GROUPS_ARG";
-    private static final String START_TESTS = "START_TESTS_ARG";
+    private static CommandLine cmd;
 
     public static void main(String[] args) {
 
-        if (args.length < 2) {
-            if (args[0].trim().equals(HELP)) {
-                printHelp();
-            } else if (args[0].trim().equals(TEST_LIST_ARG)) {
-                printTestList();
-            } else {
-                System.out.println("At least one argument expected!!!");
-            }
+        System.out.println(Arrays.asList(args));
+
+        initOptions(args);
+        if (cmd == null) {
+            System.out.println("Incorrect arguments!!!");
+            System.out.println();
+            printHelp();
+            return;
+        }
+
+        if (cmd.getOptions().length == 0) {
+            System.out.println("At least one argument expected!!!");
+            return;
+        } else if (cmd.hasOption(HELP)) {
+            printHelp();
+            return;
+        } else if(cmd.hasOption(HELP_GRADLE)){
+            printGradleHelp();
+            return;
+        }else if (cmd.hasOption(TEST_LIST)) {
+            printTestList();
             return;
         }
 
         WebDriver driver = null;
         //Check browser as first argument
-        if (args[0].trim().equals(DEFAULT_BROWSER)) {
-            Browsers browser = Arrays.asList(Browsers.values()).stream().filter(item -> item.name().equals(args[0].trim())).findFirst().orElse(null);
+        if (cmd.hasOption(BROWSER)) {
+            Browsers browser = Arrays.asList(Browsers.values()).stream().filter(item -> item.name().equals(cmd.getOptionValue(BROWSER))).findFirst().orElse(null);
             if (browser != null) {
                 switch (browser) {
                     case FIREFOX:
@@ -81,57 +93,31 @@ public class Main {
             }
         }
 
-        final List<String> selectedTestGroups = new ArrayList<>();
-        final List<String> selectedTests = new ArrayList<>();
-        int argumentIndex = 2;
+        List<String> selectedTestGroups = new ArrayList<>();
+        List<String> selectedTests = new ArrayList<>();
         //Check tests as second argument
-        if (args[1].trim().equals(CUSTOM_TESTS)) {
-            //if custom tests selected, check what arguments exist
-            if (args.length < 3) {
-                System.out.println("At least one test expected!!!");
-                return;
-            }
+        if (!cmd.hasOption(ALL)) {
             //if tests set as groups
-
-            if (args[argumentIndex].trim().equals(START_GROUPS)) {
-
-                if (args.length < 4) {
+            if (cmd.hasOption(GROUPS)) {
+                if (0 == cmd.getOptionValues(GROUPS).length) {
                     System.out.println("At least one test group expected!!!");
                     return;
                 }
-                argumentIndex = 3;
-                //fill list of test groups
-                while (args.length > argumentIndex && !args[argumentIndex].trim().equals(START_TESTS)) {
-                    selectedTestGroups.add(args[argumentIndex]);
-                    argumentIndex++;
-                }
+                selectedTestGroups = Arrays.asList(cmd.getOptionValues(GROUPS));
             }
             //if tests set as testName
-            if (args.length > argumentIndex && args[argumentIndex].trim().equals(START_TESTS)) {
+            if (cmd.hasOption(TESTS)) {
                 //if tests are not specified
-                boolean testsExistInArgs = args.length < argumentIndex + 2;
-                if (testsExistInArgs && selectedTestGroups.isEmpty()) {
-                    System.out.println("At least one test group expected!!!");
+                if (0 == cmd.getOptionValues(TESTS).length) {
+                    System.out.println("At least one test expected!!!");
                     return;
                 }
-                if (!testsExistInArgs) {
-                    argumentIndex++;
-                    //fill list of custom tests
-                    while (args.length > argumentIndex && !args[argumentIndex].trim().equals(STOP_ON_ERROR_ARG)) {
-                        selectedTests.add(args[argumentIndex]);
-                        argumentIndex++;
-                    }
-                }
+                selectedTests = Arrays.asList(cmd.getOptionValues(TESTS));
             }
-        } else if (!args[1].trim().equals(ALL_TESTS)) {
-            System.out.println("List of parameters is incorrect!!!");
-            return;
         }
-        //stop on error exist
-        System.out.println();
-        System.out.println(args[argumentIndex].trim());
-        boolean stopOnError = args.length > argumentIndex && args[argumentIndex].trim().equals(STOP_ON_ERROR_ARG);
 
+        //stop on error exist
+        boolean stopOnError = cmd.hasOption(STOP_ON_ERROR);
         final List<Class<? extends AbstractTest>> foundedTests = getAllTests();
         int failedTestCount = 0;
         int runTestCount = 0;
@@ -176,6 +162,24 @@ public class Main {
 
     }
 
+    private static void initOptions(String[] args) {
+        Options options = new Options();
+        options.addOption(Option.builder(HELP).longOpt(HELP_LONG).hasArg(false).build());
+        options.addOption(Option.builder(HELP_GRADLE).longOpt(HELP_GRADLE_LONG).hasArg(false).build());
+        options.addOption(Option.builder(TEST_LIST).longOpt(TEST_LIST_LONG).hasArg(false).build());
+        options.addOption(Option.builder(BROWSER).longOpt(BROWSER_LONG).hasArg(true).build());
+        options.addOption(Option.builder(ALL).hasArg(false).build());
+        options.addOption(Option.builder(GROUPS).longOpt(GROUPS_LONG).hasArgs().build());
+        options.addOption(Option.builder(TESTS).longOpt(TESTS_LONG).hasArgs().build());
+        options.addOption(Option.builder(STOP_ON_ERROR).longOpt(STOP_ON_ERROR_LONG).hasArg(false).build());
+        try {
+            CommandLineParser parser = new DefaultParser();
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            logger.error(e.getMessage());
+        }
+    }
+
     private static List<Class<? extends AbstractTest>> getAllTests() {
         Reflections reflections = new Reflections(TEST_PACKAGE);
         return reflections.getSubTypesOf(AbstractTest.class)
@@ -183,7 +187,7 @@ public class Main {
                 .collect(Collectors.toList());
     }
 
-    public static void printTestList() {
+    private static void printTestList() {
         final List<Class<? extends AbstractTest>> foundedTests = getAllTests();
         Map<String, List<String>> testsByGroups = new HashMap<>();
         foundedTests.forEach(item -> {
@@ -192,6 +196,7 @@ public class Main {
             }
             testsByGroups.get(item.getAnnotation(SeleniumTestGroup.class).name()).add(item.getAnnotation(SeleniumTest.class).name());
         });
+        System.out.println();
         System.out.println("====== ====== ====== Tests ====== ====== ======");
         System.out.println("Total : " + foundedTests.size());
         System.out.println();
@@ -201,25 +206,46 @@ public class Main {
                             System.out.println("\t" + item)
             );
         });
+        System.out.println();
     }
 
-    public static void printHelp() {
+    private static void printGradleHelp() {
+        System.out.println();
         System.out.println("====== ====== ====== Help tutorial ====== ===== ======");
         System.out.println();
-        System.out.println("Usage: gradle runTests [-P_browser] -P_all");
-        System.out.println("\t\t<to run all tests>");
-        System.out.println("\tor  gradle runTests [-P_browser] [-options]");
-        System.out.println("\t\t<to run custom selected tests>");
+        System.out.println("Usage: gradle runTests [-options]");
         System.out.println();
         System.out.println("where options include:");
-        System.out.println("    -P_browser=<value>\t\tset browser to test - 'FIREFOX' is default. ('FIREFOX','CHROME','OPERA','SAFARI','IE')");
+        System.out.println("    -P_browser, -P_b =<value>\tset browser to test - 'FIREFOX' is default. ('FIREFOX','CHROME','OPERA','SAFARI','IE')");
         System.out.println("    -P_all\t\t\tselect all existing tests to execute.");
-        System.out.println("    -P_groups=<\"[args...]\">\tspecifies list of groups of tests to execute.");
-        System.out.println("    -P_tests=<\"[args...]\">\tspecifies list of tests to execute");
-        System.out.println("    -P_tests\t\t\tprint list of existing tests");
-        System.out.println("    -P_stop_on_error\t\tif specified, tests will be stopper after first error");
-        System.out.println("    -P_help\t\t\tprint this help message");
+        System.out.println("    -P_groups, -P_g=<\"[args...]\">\tspecifies list of groups of tests to execute.");
+        System.out.println("    -P_tests, -P_t=<\"[args...]\">\tspecifies list of tests to execute");
+        System.out.println("    -P_test_list, -P_tl\t\t\tprint list of existing tests");
+        System.out.println("    -P_stop_on_error, -P_s\t\tif specified, tests will be stopper after first error");
+        System.out.println("    -P_help_g, -P_hg\t\t\tprint this help message");
+        System.out.println("    -P_help, -P_h\t\t\tprint help message for jar");
         System.out.println();
         System.out.println("====== ====== ====== ====== ====== ====== ===== ======");
+        System.out.println();
+    }
+
+    private static void printHelp() {
+        System.out.println();
+        System.out.println("====== ====== ====== Help tutorial ====== ===== ======");
+        System.out.println();
+        System.out.println("Usage: *.jar [-options]");
+        System.out.println();
+        System.out.println("where options include:");
+        System.out.println("    -browser, -b <value>\tset browser to test - 'FIREFOX' is default. ('FIREFOX','CHROME','OPERA','SAFARI','IE')");
+        System.out.println("    -all\t\t\tselect all existing tests to execute.");
+        System.out.println("    -groups, -g <args...>\tspecifies list of groups of tests to execute.");
+        System.out.println("    -tests, -t <args...>\tspecifies list of tests to execute");
+        System.out.println("    -test_list, -tl\t\tprint list of existing tests");
+        System.out.println("    -stop_on_error, -s\t\tif specified, tests will be stopper after first error");
+        System.out.println("    -help_g, -hg\t\tprint help message for gradle");
+        System.out.println("    -help, -h\t\t\tprint this help message");
+        System.out.println();
+        System.out.println("====== ====== ====== ====== ====== ====== ===== ======");
+        System.out.println();
     }
 }

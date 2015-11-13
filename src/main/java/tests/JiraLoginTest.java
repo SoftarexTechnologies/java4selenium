@@ -26,12 +26,11 @@ public final class JiraLoginTest extends AbstractTest {
         //go to Jira login page
         driver.get(baseUrl);
         //fill form
-        driver.findElement(By.id("login-form-username")).sendKeys("u.reshetnyak");
+        driver.findElement(By.id("login-form-username")).sendKeys("login");
         driver.findElement(By.id("login-form-password")).sendKeys("password");
         //do login
         String loginPageUrl = driver.getCurrentUrl();
         driver.findElement(By.id("login-form-submit")).click();
-
         //check
         if(driver.getCurrentUrl().equals(loginPageUrl)){
             throw new LoginFailedException("Invalid password");

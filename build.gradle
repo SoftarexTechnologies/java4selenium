@@ -6,34 +6,41 @@ apply plugin: 'java'
 task(runTests, type: JavaExec) {
     main = 'run.Main'
     classpath = sourceSets.main.runtimeClasspath
-    if (project.hasProperty("_help")) {
-        args "HELP_ARG"
-    } else {
-        if (project.hasProperty("_tests")) {
-            args "TEST_LIST_ARG"
-        } else {
-            if (project.hasProperty("_browser")) {
-                args browser
-            } else {
-                args "DEFAULT_BROWSER_ARG"
-            }
-            if (project.hasProperty("_all")) {
-                args "ALL_ARG"
-            } else {
-                args "CUSTOM_ARG"
-                if (project.hasProperty("_groups")) {
-                    args "START_GROUPS_ARG"
-                    args Eval.me(groups)
-                }
-                if (project.hasProperty("_tests")) {
-                    args "START_TESTS_ARG"
-                    args Eval.me(tests)
-                }
-            }
-            if (project.hasProperty("_stop_on_error")) {
-                args "STOP_ON_ERROR_ARG"
-            }
-        }
+    if (project.hasProperty("_help") || project.hasProperty("_h")) {
+        args "-h"
+    }
+    if (project.hasProperty("_help_g") || project.hasProperty("_hg")) {
+        args "-hg"
+    }
+    if (project.hasProperty("_test_list") || project.hasProperty("_tl")) {
+        args "-tl"
+    }
+    if (project.hasProperty("_browser")) {
+        args "-b"
+        args browser
+    }else if(project.hasProperty("_b")){
+        args "-b"
+        args b
+    }
+    if (project.hasProperty("_all")) {
+        args "-all"
+    }
+    if (project.hasProperty("_groups")) {
+        args "-g"
+        args Eval.me(groups)
+    }else if(project.hasProperty("_g")){
+        args "-g"
+        args Eval.me(g)
+    }
+    if (project.hasProperty("_tests")) {
+        args "-t"
+        args Eval.me(tests)
+    } else if(project.hasProperty("_t")) {
+        args "-t"
+        args Eval.me(t)
+    }
+    if (project.hasProperty("_stop") || project.hasProperty("_s")) {
+        args "-s"
     }
 
 }
@@ -60,4 +67,5 @@ dependencies {
     compile 'org.seleniumhq.selenium:selenium-chrome-driver:2.48.2'
     compile 'org.reflections:reflections:0.9.10'
     compile 'org.slf4j:slf4j-log4j12:1.7.13'
+    compile 'commons-cli:commons-cli:1.3.1'
 }
