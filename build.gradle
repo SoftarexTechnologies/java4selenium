@@ -17,27 +17,27 @@ task(runTests, type: JavaExec) {
     }
     if (project.hasProperty("_browser")) {
         args "-b"
-        args browser
+        args _browser
     }else if(project.hasProperty("_b")){
         args "-b"
-        args b
+        args _b
     }
     if (project.hasProperty("_all")) {
         args "-all"
     }
     if (project.hasProperty("_groups")) {
         args "-g"
-        args Eval.me(groups)
+        args Eval.me(_groups)
     }else if(project.hasProperty("_g")){
         args "-g"
-        args Eval.me(g)
+        args Eval.me(_g)
     }
     if (project.hasProperty("_tests")) {
         args "-t"
-        args Eval.me(tests)
+        args Eval.me(_tests)
     } else if(project.hasProperty("_t")) {
         args "-t"
-        args Eval.me(t)
+        args Eval.me(_t)
     }
     if (project.hasProperty("_stop") || project.hasProperty("_s")) {
         args "-s"
