@@ -148,7 +148,7 @@ public class Main {
         } finally {
             System.out.println();
             System.out.println(" ====== ====== ====== Result ====== ====== ======");
-            System.out.println("Was executed " + runTestCount + " tests");
+            System.out.println("Executed " + runTestCount + " test(s)");
             System.out.println("Successfully: " + (runTestCount - failedTestCount));
             System.out.println("Failed: " + failedTestCount);
             System.out.println(" ====== ====== ======  End   ====== ====== ======");
