@@ -51,10 +51,7 @@ public class Main {
             return;
         }
 
-        if (cmd.getOptions().length == 0) {
-            System.out.println("At least one argument expected!!!");
-            return;
-        } else if (cmd.hasOption(HELP)) {
+        if (cmd.hasOption(HELP)) {
             printHelp();
             return;
         } else if(cmd.hasOption(HELP_GRADLE)){
@@ -71,9 +68,6 @@ public class Main {
             Browsers browser = Arrays.asList(Browsers.values()).stream().filter(item -> item.name().equals(cmd.getOptionValue(BROWSER))).findFirst().orElse(null);
             if (browser != null) {
                 switch (browser) {
-                    case FIREFOX:
-                        driver = new FirefoxDriver();
-                        break;
                     case CHROME:
                         driver = new ChromeDriver();
                         break;
@@ -86,8 +80,9 @@ public class Main {
                     case IE:
                         driver = new InternetExplorerDriver();
                         break;
+                    case FIREFOX:
                     default:
-                        driver = null;
+                        driver = new FirefoxDriver();
                         break;
                 }
             }
@@ -118,11 +113,11 @@ public class Main {
 
         //stop on error exist
         boolean stopOnError = cmd.hasOption(STOP_ON_ERROR);
-        final List<Class<? extends AbstractTest>> foundedTests = getAllTests();
+        final List<Class<? extends AbstractTest>> tests = getAllTests();
         int failedTestCount = 0;
         int runTestCount = 0;
         try {
-            for (Class<? extends AbstractTest> test : foundedTests) {
+            for (Class<? extends AbstractTest> test : tests) {
                 boolean testAllowed = true;
                 if (!selectedTestGroups.isEmpty()) {
                     testAllowed = selectedTestGroups.stream().filter(group ->
@@ -158,8 +153,6 @@ public class Main {
             System.out.println("Failed: " + failedTestCount);
             System.out.println(" ====== ====== ======  End   ====== ====== ======");
         }
-
-
     }
 
     private static void initOptions(String[] args) {
@@ -188,9 +181,9 @@ public class Main {
     }
 
     private static void printTestList() {
-        final List<Class<? extends AbstractTest>> foundedTests = getAllTests();
+        final List<Class<? extends AbstractTest>> tests = getAllTests();
         Map<String, List<String>> testsByGroups = new HashMap<>();
-        foundedTests.forEach(item -> {
+        tests.forEach(item -> {
             if (!testsByGroups.containsKey(item.getAnnotation(SeleniumTestGroup.class).name())) {
                 testsByGroups.put(item.getAnnotation(SeleniumTestGroup.class).name(), new ArrayList<>());
             }
@@ -198,7 +191,7 @@ public class Main {
         });
         System.out.println();
         System.out.println("====== ====== ====== Tests ====== ====== ======");
-        System.out.println("Total : " + foundedTests.size());
+        System.out.println("Total : " + tests.size());
         System.out.println();
         testsByGroups.forEach((key, value) -> {
             System.out.println(key + " (" + value.size() + "):");
